@@ -1,5 +1,5 @@
-# Menggunakan base image PHP 8.1 dengan FPM untuk Laravel
-FROM php:8.1-fpm
+# Menggunakan base image PHP 8.2 dengan FPM untuk Laravel
+FROM php:8.2-fpm
 
 # Install dependencies dan PHP extension yang dibutuhkan untuk Laravel
 RUN apt-get update && apt-get install -y \
@@ -23,19 +23,20 @@ WORKDIR /var/www/html
 # Copy project files
 COPY . .
 
-RUN composer install --no-scripts --no-autoloader
-
-RUN php artisan config:cache
-
 # Menyalin izin untuk direktori Laravel agar storage dan cache dapat ditulis
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Menyimpan environment file (.env)
 COPY .env.example .env
 
+# Install dependencies Laravel
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+
+# Generate Laravel APP_KEY
+RUN php artisan key:generate
+
 # Expose port 80 untuk mengakses aplikasi melalui Nginx
 EXPOSE 80
 
-# Perintah akhir: jalankan composer install setelah container aktif dan generate APP_KEY
-CMD php artisan key:generate && \
-    php-fpm
+# Perintah untuk memulai PHP-FPM saat container berjalan
+CMD ["php-fpm"]
